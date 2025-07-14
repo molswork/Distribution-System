@@ -52,6 +52,11 @@ public class JwtUtils {
         return claims.get("role", String.class);
     }
     
+    public static long getExpirationFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims.getExpiration().getTime();
+    }
+    
     public static boolean isTokenExpired(String token) {
         try {
             Claims claims = parseToken(token);
