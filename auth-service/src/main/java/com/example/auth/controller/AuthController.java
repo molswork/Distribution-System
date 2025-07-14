@@ -1,5 +1,7 @@
 package com.example.auth.controller;
 
+import com.example.auth.service.AuthService;
+import com.example.auth.service.SmsService;
 import com.example.common.annotation.RequireRole;
 import com.example.common.dto.ApiResponse;
 import com.example.common.enums.UserRole;
@@ -11,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -25,6 +28,24 @@ import javax.validation.constraints.Pattern;
 @Tag(name = "用户认证", description = "用户注册、登录、token刷新等认证相关接口")
 public class AuthController {
     
+    @Autowired
+    private SmsService smsService;
+    
+    @Autowired
+    private AuthService authService;
+    
+    @Operation(summary = "发送注册验证码", description = "向手机号发送注册验证码")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "发送成功"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "手机号格式错误或发送太频繁")
+    })
+    @PostMapping("/send-code")
+    public com.example.common.dto.ApiResponse<String> sendRegisterCode(
+            @Valid @RequestBody SendCodeRequest request) {
+        smsService.sendRegisterCode(request.getPhone());
+        return com.example.common.dto.ApiResponse.success("验证码发送成功");
+    }
+    
     @Operation(summary = "用户注册", description = "新用户注册，支持销售和代理角色注册")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "注册成功"),
@@ -33,7 +54,17 @@ public class AuthController {
     @PostMapping("/register")
     public com.example.common.dto.ApiResponse<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request) {
-        // TODO: 实现注册逻辑
+        
+        // 1. 验证验证码
+        if (!smsService.verifyCode(request.getPhone(), request.getCode())) {
+            return com.example.common.dto.ApiResponse.error(400, "验证码错误或已过期");
+        }
+        
+        // TODO: 2. 检查手机号是否已注册
+        // TODO: 3. 验证邀请码（如果是代理注册）
+        // TODO: 4. 创建用户账户
+        // TODO: 5. 分配默认角色和权限
+        
         RegisterResponse response = new RegisterResponse();
         response.setUserId(1L);
         response.setPhone(request.getPhone());
@@ -117,6 +148,11 @@ public class AuthController {
         @Schema(description = "手机号", required = true, example = "13800138000")
         private String phone;
         
+        @NotBlank(message = "验证码不能为空")
+        @Pattern(regexp = "^\\d{6}$", message = "验证码格式不正确")
+        @Schema(description = "短信验证码（6位数字）", required = true, example = "123456")
+        private String code;
+        
         @NotBlank(message = "密码不能为空")
         @Schema(description = "密码（6-20位）", required = true, example = "123456")
         private String password;
@@ -134,6 +170,8 @@ public class AuthController {
         // Getters and setters
         public String getPhone() { return phone; }
         public void setPhone(String phone) { this.phone = phone; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
         public String getRole() { return role; }
@@ -274,5 +312,20 @@ public class AuthController {
         public void setToken(String token) { this.token = token; }
         public Long getExpiresIn() { return expiresIn; }
         public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
+    }
+    
+    /**
+     * 发送验证码请求
+     */
+    @Schema(description = "发送验证码请求")
+    public static class SendCodeRequest {
+        @NotBlank(message = "手机号不能为空")
+        @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+        @Schema(description = "手机号", required = true, example = "13800138000")
+        private String phone;
+        
+        // Getters and setters
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
     }
 }

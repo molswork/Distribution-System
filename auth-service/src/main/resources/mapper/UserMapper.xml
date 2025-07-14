@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  用户数据访问层 MyBatis 映射文件
+  
+  对应接口：com.example.auth.mapper.UserMapper
+  对应实体：com.example.auth.entity.User
+  对应数据表：users
+  
+  功能说明：
+  - 提供用户表的 CRUD 操作 SQL 映射
+  - 支持按手机号、ID、邀请码查询用户
+  - 支持用户注册、更新等操作
+  - 提供手机号唯一性检查和邀请码生成功能
+  
+  @author mols
+  @date 2025-07-12
+  @since 1.0.0
+-->
+<mapper namespace="com.example.auth.mapper.UserMapper">
+    
+    <!-- 结果映射：将数据库字段映射到实体属性 -->
+    <resultMap id="BaseResultMap" type="com.example.auth.entity.User">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="nickname" property="nickname" jdbcType="VARCHAR"/>
+        <result column="invite_code" property="inviteCode" jdbcType="VARCHAR"/>
+        <result column="openid" property="openid" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="role" property="role" jdbcType="VARCHAR"/>
+        <result column="inviter_id" property="inviterId" jdbcType="BIGINT"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="total_gmv" property="totalGmv" jdbcType="DECIMAL"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, nickname, invite_code, openid, phone, password, role, inviter_id, 
+        status, total_gmv, created_at, updated_at
+    </sql>
+    
+    <!-- 根据手机号查询用户 -->
+    <select id="selectByPhone" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM users
+        WHERE phone = #{phone}
+    </select>
+    
+    <!-- 根据用户ID查询用户 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM users
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据邀请码查询用户 -->
+    <select id="selectByInviteCode" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM users
+        WHERE invite_code = #{inviteCode}
+    </select>
+    
+    <!-- 插入用户记录 -->
+    <insert id="insert" parameterType="com.example.auth.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            nickname, invite_code, openid, phone, password, 
+            role, inviter_id, status, total_gmv
+        ) VALUES (
+            #{nickname}, #{inviteCode}, #{openid}, #{phone}, #{password},
+            #{role}, #{inviterId}, #{status}, #{totalGmv}
+        )
+    </insert>
+    
+    <!-- 更新用户信息 -->
+    <update id="update" parameterType="com.example.auth.entity.User">
+        UPDATE users
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="openid != null">openid = #{openid},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="role != null">role = #{role},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalGmv != null">total_gmv = #{totalGmv},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 检查手机号是否已存在 -->
+    <select id="existsByPhone" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM users
+        WHERE phone = #{phone}
+    </select>
+    
+    <!-- 生成唯一的邀请码 -->
+    <select id="generateUniqueInviteCode" resultType="string">
+        SELECT CONCAT('INV', LPAD(FLOOR(RAND() * 1000000), 6, '0')) AS invite_code
+        FROM DUAL
+        WHERE NOT EXISTS (
+            SELECT 1 FROM users WHERE invite_code = invite_code
+        )
+        LIMIT 1
+    </select>
+    
+</mapper>

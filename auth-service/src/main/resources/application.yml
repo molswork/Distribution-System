@@ -43,6 +43,15 @@ jwt:
   secret: mySecretKey123456789012345678901234567890
   expiration: 86400000 # 24小时
 
+# 阿里云SMS配置
+aliyun:
+  sms:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:your-access-key-id}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:your-access-key-secret}
+    sign-name: ${ALIYUN_SMS_SIGN_NAME:分销系统}
+    register-template-code: ${ALIYUN_SMS_REGISTER_TEMPLATE:SMS_123456789}
+    endpoint: dysmsapi.aliyuncs.com
+
 # 日志配置
 logging:
   level:

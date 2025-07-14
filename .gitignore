@@ -155,3 +155,4 @@ yarn-error.log*
 Context-Engineering
 
 resource/
+.promptx/resource/project.registry.json
