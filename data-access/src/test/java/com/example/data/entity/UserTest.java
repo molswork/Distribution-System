@@ -39,7 +39,7 @@ class UserTest {
         user.setPhone("13800138000");
         user.setPassword("password123");
         user.setRole("agent");
-        user.setStatus(User.UserStatus.ACTIVE);
+        user.setStatus(User.UserStatus.ACTIVE.getCode());
         user.setCommissionRate(new BigDecimal("0.1000"));
         user.setParentId(2L);
         user.setCreatedAt(LocalDateTime.now());
@@ -57,7 +57,7 @@ class UserTest {
         assertEquals("13900139000", newUser.getPhone());
         assertEquals("password", newUser.getPassword());
         assertEquals("agent", newUser.getRole());
-        assertEquals(User.UserStatus.ACTIVE, newUser.getStatus());
+        assertEquals(User.UserStatus.ACTIVE.getCode(), newUser.getStatus());
         assertEquals(BigDecimal.ZERO, newUser.getCommissionRate());
         assertNotNull(newUser.getCreatedAt());
         assertNotNull(newUser.getUpdatedAt());
@@ -126,8 +126,8 @@ class UserTest {
     @Test
     @DisplayName("检查用户状态 - 活跃状态")
     void testIsActive_ActiveStatus() {
-        user.setStatus(User.UserStatus.ACTIVE);
-        
+        user.setStatus(User.UserStatus.ACTIVE.getCode());
+
         assertTrue(user.isActive());
         assertFalse(user.isBanned());
     }
@@ -135,8 +135,8 @@ class UserTest {
     @Test
     @DisplayName("检查用户状态 - 封禁状态")
     void testIsBanned_BannedStatus() {
-        user.setStatus(User.UserStatus.BANNED);
-        
+        user.setStatus(User.UserStatus.BANNED.getCode());
+
         assertFalse(user.isActive());
         assertTrue(user.isBanned());
     }
@@ -144,8 +144,8 @@ class UserTest {
     @Test
     @DisplayName("检查用户状态 - 未激活状态")
     void testStatus_InactiveStatus() {
-        user.setStatus(User.UserStatus.INACTIVE);
-        
+        user.setStatus(User.UserStatus.INACTIVE.getCode());
+
         assertFalse(user.isActive());
         assertFalse(user.isBanned());
     }
@@ -153,8 +153,8 @@ class UserTest {
     @Test
     @DisplayName("检查用户状态 - 待审核状态")
     void testStatus_PendingStatus() {
-        user.setStatus(User.UserStatus.PENDING);
-        
+        user.setStatus(User.UserStatus.PENDING.getCode());
+
         assertFalse(user.isActive());
         assertFalse(user.isBanned());
     }
@@ -236,7 +236,7 @@ class UserTest {
         assertTrue(userString.contains("id=1"));
         assertTrue(userString.contains("username='testuser'"));
         assertTrue(userString.contains("email='test@example.com'"));
-        assertTrue(userString.contains("status=ACTIVE"));
+        assertTrue(userString.contains("status=active"));
     }
     
     @Test
@@ -248,7 +248,7 @@ class UserTest {
         String phone = "13900139001";
         String password = "newpassword";
         String role = "director";
-        User.UserStatus status = User.UserStatus.PENDING;
+        String status = User.UserStatus.PENDING.getCode();
         BigDecimal commissionRate = new BigDecimal("0.15");
         Long parentId = 5L;
         LocalDateTime now = LocalDateTime.now();

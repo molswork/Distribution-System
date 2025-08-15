@@ -49,10 +49,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
  */
 @Aspect
 @Component
-@ConditionalOnProperty(name = "data.access.interceptor.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(name = "data.access.interceptor.enabled", havingValue = "true", matchIfMissing = true)
 public class DataAccessInterceptor {
-    @org.springframework.beans.factory.annotation.Value("${data.access.interceptor.enabled:false}")
-    private boolean enabled;
+    @org.springframework.beans.factory.annotation.Value("${data.access.interceptor.enabled:true}")
+    private boolean enabled = true;
 
     @org.springframework.beans.factory.annotation.Value("${spring.application.name:}")
     private String applicationName;

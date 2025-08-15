@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.data.mapper.AgentMapper">
+
+    <!-- 基础ResultMap：尽量与现有实体字段对齐，缺失列按空处理 -->
+    <resultMap id="BaseResultMap" type="com.example.data.entity.Agent">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="real_name" property="realName" jdbcType="VARCHAR"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="agent_code" property="agentCode" jdbcType="VARCHAR"/>
+        <result column="level" property="level" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段列表（来自 users + 关联表的派生列） -->
+    <sql id="Base_Column_List">
+        u.id AS id,
+        u.id AS user_id,
+        u.username AS username,
+        NULL AS real_name,
+        u.phone AS phone,
+        u.email AS email,
+        NULL AS agent_code,
+        al.name AS level,
+        u.status AS status,
+        u.created_at AS created_at,
+        u.updated_at AS updated_at
+    </sql>
+
+    <!-- 根据 userId 查询代理基础信息（最小集合） -->
+    <select id="findBasicByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM users u
+        LEFT JOIN user_agent_level ual ON ual.user_id = u.id
+        LEFT JOIN agent_levels al ON al.id = ual.level_id
+        WHERE u.id = #{userId}
+          AND u.role = 'agent'
+        LIMIT 1
+    </select>
+
+    <!-- 条件查询代理列表（分页 + 筛选 + 排序白名单） -->
+    <select id="findByConditions" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM users u
+        LEFT JOIN user_agent_level ual ON ual.user_id = u.id
+        LEFT JOIN agent_levels al ON al.id = ual.level_id
+        WHERE u.role = 'agent'
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.email LIKE CONCAT('%', #{keyword}, '%')
+                OR u.phone LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="status != null and status != ''">
+            AND u.status = #{status}
+        </if>
+        <if test="levelName != null and levelName != ''">
+            AND al.name = #{levelName}
+        </if>
+        <if test="parentAgentId != null">
+            AND u.parent_id = #{parentAgentId}
+        </if>
+        <if test="createTimeStart != null">
+            AND DATE(u.created_at) &gt;= DATE(#{createTimeStart})
+        </if>
+        <if test="createTimeEnd != null">
+            AND DATE(u.created_at) &lt;= DATE(#{createTimeEnd})
+        </if>
+        ORDER BY
+        <choose>
+            <when test="sortBy == 'createdAt'"> u.created_at </when>
+            <when test="sortBy == 'updatedAt'"> u.updated_at </when>
+            <when test="sortBy == 'username'"> u.username </when>
+            <when test="sortBy == 'status'"> u.status </when>
+            <when test="sortBy == 'level'"> al.name </when>
+            <otherwise> u.created_at </otherwise>
+        </choose>
+        <choose>
+            <when test="sortOrder != null and (sortOrder == 'asc' or sortOrder == 'ASC')"> ASC </when>
+            <otherwise> DESC </otherwise>
+        </choose>
+        <if test="offset != null and limit != null">
+            LIMIT #{offset}, #{limit}
+        </if>
+    </select>
+
+    <!-- 条件统计数量（与 findByConditions 同过滤） -->
+    <select id="countByConditions" resultType="long">
+        SELECT COUNT(*)
+        FROM users u
+        LEFT JOIN user_agent_level ual ON ual.user_id = u.id
+        LEFT JOIN agent_levels al ON al.id = ual.level_id
+        WHERE u.role = 'agent'
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.email LIKE CONCAT('%', #{keyword}, '%')
+                OR u.phone LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="status != null and status != ''">
+            AND u.status = #{status}
+        </if>
+        <if test="levelName != null and levelName != ''">
+            AND al.name = #{levelName}
+        </if>
+        <if test="parentAgentId != null">
+            AND u.parent_id = #{parentAgentId}
+        </if>
+        <if test="createTimeStart != null">
+            AND DATE(u.created_at) &gt;= DATE(#{createTimeStart})
+        </if>
+        <if test="createTimeEnd != null">
+            AND DATE(u.created_at) &lt;= DATE(#{createTimeEnd})
+        </if>
+    </select>
+
+    <!-- upsert user_agent_level（不存在则插入，存在则更新） -->
+    <insert id="upsertUserAgentLevel">
+        INSERT INTO user_agent_level(user_id, level_id, assigned_at, effective_date)
+        VALUES(#{userId}, #{levelId}, NOW(), CURDATE())
+        ON DUPLICATE KEY UPDATE
+            level_id = VALUES(level_id),
+            assigned_at = NOW(),
+            effective_date = CURDATE()
+    </insert>
+
+</mapper>
+

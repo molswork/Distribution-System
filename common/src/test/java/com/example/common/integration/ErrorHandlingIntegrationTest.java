@@ -39,7 +39,8 @@ class ErrorHandlingIntegrationTest {
         BusinessException exception = new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
         
         // 通过全局异常处理器处理
-        CommonResult<Object> result = globalExceptionHandler.handleBusinessException(exception);
+        var response = globalExceptionHandler.handleBusinessException(exception);
+        CommonResult<Object> result = response.getBody();
         
         // 验证错误码正确传播
         assertNotNull(result);
@@ -62,7 +63,8 @@ class ErrorHandlingIntegrationTest {
         BusinessException exception = new BusinessException(ErrorCode.OPERATION_FAILED);
         
         // 通过全局异常处理器处理
-        CommonResult<Object> result = globalExceptionHandler.handleBusinessException(exception);
+        var response = globalExceptionHandler.handleBusinessException(exception);
+        CommonResult<Object> result = response.getBody();
         
         // 验证错误码正确传播
         assertNotNull(result);
@@ -85,22 +87,26 @@ class ErrorHandlingIntegrationTest {
         
         // 401 - 未授权
         AuthenticationException authException = new AuthenticationException("认证失败");
-        CommonResult<String> authResult = globalExceptionHandler.handleAuthenticationException(authException);
+        var authResp = globalExceptionHandler.handleAuthenticationException(authException);
+        CommonResult<java.util.Map<String, Object>> authResult = authResp.getBody();
         assertEquals(401, authResult.getCode());
         
         // 403 - 权限不足
         AuthorizationException authzException = new AuthorizationException("权限不足");
-        CommonResult<String> authzResult = globalExceptionHandler.handleAuthorizationException(authzException);
+        var authzResp = globalExceptionHandler.handleAuthorizationException(authzException);
+        CommonResult<java.util.Map<String, Object>> authzResult = authzResp.getBody();
         assertEquals(403, authzResult.getCode());
         
         // 404 - 资源不存在
         BusinessException notFoundException = new BusinessException(ErrorCode.RESOURCE_NOT_FOUND);
-        CommonResult<Object> notFoundResult = globalExceptionHandler.handleBusinessException(notFoundException);
+        var notFoundResp = globalExceptionHandler.handleBusinessException(notFoundException);
+        CommonResult<Object> notFoundResult = notFoundResp.getBody();
         assertEquals(404, notFoundResult.getCode());
         
         // 500 - 内部服务器错误
         Exception internalException = new RuntimeException("系统异常");
-        CommonResult<Map<String, Object>> internalResult = globalExceptionHandler.handleException(internalException);
+        var internalResp = globalExceptionHandler.handleException(internalException);
+        CommonResult<Map<String, Object>> internalResult = internalResp.getBody();
         assertEquals(500, internalResult.getCode());
     }
 
@@ -109,7 +115,8 @@ class ErrorHandlingIntegrationTest {
     void testErrorResponseFormatStandardization() {
         // 测试新格式错误响应
         BusinessException businessException = new BusinessException(ErrorCode.BAD_REQUEST);
-        CommonResult<Object> businessResult = globalExceptionHandler.handleBusinessException(businessException);
+        var businessResp = globalExceptionHandler.handleBusinessException(businessException);
+        CommonResult<Object> businessResult = businessResp.getBody();
         
         // 验证响应结构
         assertNotNull(businessResult.getCode());
@@ -128,7 +135,8 @@ class ErrorHandlingIntegrationTest {
         
         // 测试向后兼容格式
         AuthenticationException authException = new AuthenticationException("认证失败");
-        CommonResult<String> authResult = globalExceptionHandler.handleAuthenticationException(authException);
+        var authResp = globalExceptionHandler.handleAuthenticationException(authException);
+        CommonResult<java.util.Map<String, Object>> authResult = authResp.getBody();
         
         // 验证向后兼容响应格式
         assertEquals(false, authResult.getSuccess());
@@ -145,7 +153,8 @@ class ErrorHandlingIntegrationTest {
         MethodArgumentNotValidException validationException = new MethodArgumentNotValidException(null, bindingResult);
         
         // 处理异常
-        CommonResult<String> result = globalExceptionHandler.handleValidationException(validationException);
+        var resp = globalExceptionHandler.handleValidationException(validationException);
+        CommonResult<String> result = resp.getBody();
         
         // 验证结果
         assertNotNull(result);
@@ -162,7 +171,8 @@ class ErrorHandlingIntegrationTest {
         ConstraintViolationException constraintException = new ConstraintViolationException("约束违反", null);
         
         // 处理异常
-        CommonResult<String> result = globalExceptionHandler.handleConstraintViolationException(constraintException);
+        var resp = globalExceptionHandler.handleConstraintViolationException(constraintException);
+        CommonResult<String> result = resp.getBody();
         
         // 验证结果
         assertNotNull(result);
@@ -179,29 +189,29 @@ class ErrorHandlingIntegrationTest {
         
         // 业务异常
         BusinessException businessException = new BusinessException(ErrorCode.UNAUTHORIZED);
-        assertDoesNotThrow(() -> globalExceptionHandler.handleBusinessException(businessException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleBusinessException(businessException).getBody());
         
         // 认证异常
         AuthenticationException authException = new AuthenticationException("认证失败");
-        assertDoesNotThrow(() -> globalExceptionHandler.handleAuthenticationException(authException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleAuthenticationException(authException).getBody());
         
         // 授权异常
         AuthorizationException authzException = new AuthorizationException("权限不足");
-        assertDoesNotThrow(() -> globalExceptionHandler.handleAuthorizationException(authzException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleAuthorizationException(authzException).getBody());
         
         // 通用异常
         Exception generalException = new RuntimeException("通用异常");
-        assertDoesNotThrow(() -> globalExceptionHandler.handleException(generalException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleException(generalException).getBody());
         
         // 参数校验异常
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "test");
         bindingResult.addError(new FieldError("test", "field", "错误"));
         MethodArgumentNotValidException validationException = new MethodArgumentNotValidException(null, bindingResult);
-        assertDoesNotThrow(() -> globalExceptionHandler.handleValidationException(validationException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleValidationException(validationException).getBody());
         
         // 约束校验异常
         ConstraintViolationException constraintException = new ConstraintViolationException("约束错误", null);
-        assertDoesNotThrow(() -> globalExceptionHandler.handleConstraintViolationException(constraintException));
+        assertDoesNotThrow(() -> globalExceptionHandler.handleConstraintViolationException(constraintException).getBody());
     }
 
     @Test
@@ -233,10 +243,12 @@ class ErrorHandlingIntegrationTest {
         
         // 创建多个不同类型的错误响应
         BusinessException businessException = new BusinessException(ErrorCode.BAD_REQUEST);
-        CommonResult<Object> businessResult = globalExceptionHandler.handleBusinessException(businessException);
-        
+        var bizResp = globalExceptionHandler.handleBusinessException(businessException);
+        CommonResult<Object> businessResult = bizResp.getBody();
+
         AuthenticationException authException = new AuthenticationException("认证失败");
-        CommonResult<String> authResult = globalExceptionHandler.handleAuthenticationException(authException);
+        var authResp2 = globalExceptionHandler.handleAuthenticationException(authException);
+        CommonResult<java.util.Map<String, Object>> authResult = authResp2.getBody();
         
         long afterTime = System.currentTimeMillis();
         

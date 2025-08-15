@@ -17,6 +17,8 @@ import org.springframework.amqp.rabbit.test.RabbitListenerTest;
 import org.springframework.amqp.rabbit.test.RabbitListenerTestHarness;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -46,6 +48,8 @@ import static org.awaitility.Awaitility.await;
  */
 @SpringBootTest(classes = {
     RabbitMQConfig.class,
+    RabbitAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
     RabbitMQEventIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
@@ -55,8 +59,11 @@ import static org.awaitility.Awaitility.await;
     "spring.rabbitmq.password=guest",
     "spring.rabbitmq.virtual-host=/",
     "spring.rabbitmq.publisher-confirms=true",
-    "spring.rabbitmq.publisher-returns=true"
+    "spring.rabbitmq.publisher-returns=true",
+    "spring.rabbitmq.publisher-confirm-type=correlated",
+    "event-driven.enabled=false"
 })
+
 @RabbitListenerTest(capture = true)
 @DirtiesContext
 @DisplayName("RabbitMQ事件驱动架构集成测试")
@@ -131,8 +138,8 @@ class RabbitMQEventIntegrationTest {
         Long submitterId = testUserId;
         
         LeadCreatedEvent event = LeadCreatedEvent.create(
-            leadId, customerName, customerPhone, submitterId, testCorrelationId);
-        
+            leadId, customerName, customerPhone, submitterId, testUsername, testCorrelationId);
+
         // When
         domainEventPublisher.publish(event);
         
@@ -307,16 +314,16 @@ class RabbitMQEventIntegrationTest {
         // When - 并发发布事件
         for (int i = 0; i < concurrentEvents; i++) {
             final int index = i;
-            Thread.ofVirtual().start(() -> {
+            new Thread(() -> {
                 try {
                     UserCreatedEvent event = UserCreatedEvent.create(
-                        testUserId + index, testUsername + index, testPhone, 
+                        testUserId + index, testUsername + index, testPhone,
                         testRole, testCorrelationId + index);
                     domainEventPublisher.publish(event);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }).start();
         }
         
         // Then

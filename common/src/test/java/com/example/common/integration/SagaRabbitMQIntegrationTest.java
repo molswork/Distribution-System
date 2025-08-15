@@ -18,6 +18,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.test.RabbitListenerTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.annotation.DirtiesContext;
@@ -48,6 +52,7 @@ import static org.mockito.Mockito.*;
  */
 @SpringBootTest(classes = {
     RabbitMQConfig.class,
+    RabbitAutoConfiguration.class,
     SagaRabbitMQIntegrationTest.TestConfig.class
 })
 @TestPropertySource(properties = {
@@ -56,8 +61,11 @@ import static org.mockito.Mockito.*;
     "spring.rabbitmq.username=guest",
     "spring.rabbitmq.password=guest",
     "spring.rabbitmq.virtual-host=/",
-    "spring.rabbitmq.publisher-confirms=true"
+    "spring.rabbitmq.publisher-confirms=true",
+    "spring.rabbitmq.publisher-confirm-type=correlated",
+    "event-driven.enabled=false"
 })
+
 @RabbitListenerTest
 @DirtiesContext
 @DisplayName("Saga事务协调与RabbitMQ集成测试")
@@ -145,16 +153,17 @@ class SagaRabbitMQIntegrationTest {
         sagaCoordinator.startSaga(saga.getSagaId());
         
         // 模拟步骤完成事件发布
-        SagaStepCompletedEvent stepEvent = SagaStepCompletedEvent.builder()
-            .sagaId(saga.getSagaId())
-            .stepName("TEST_STEP")
-            .stepIndex(0)
-            .success(true)
-            .correlationId(testCorrelationId)
-            .eventType(EventType.SAGA_STEP_COMPLETED)
-            .build();
+        SagaStepCompletedEvent stepEvent = SagaStepCompletedEvent.createWithResult(
+            saga.getSagaId(),
+            "TEST_STEP",
+            0,
+            "test-service",
+            java.util.Map.of("success", true),
+            null,
+            testCorrelationId
+        );
         stepEvent.initializeEvent("test-service");
-        
+
         domainEventPublisher.publish(stepEvent);
         
         // Then
@@ -163,12 +172,12 @@ class SagaRabbitMQIntegrationTest {
         
         SagaStepCompletedEvent receivedEvent = sagaEventListener.getStepCompletedEvents().poll();
         assertNotNull(receivedEvent, "应该接收到步骤完成事件");
-        
+
         assertAll("Saga步骤完成事件验证",
             () -> assertEquals(saga.getSagaId(), receivedEvent.getSagaId(), "SagaId应该匹配"),
             () -> assertEquals("TEST_STEP", receivedEvent.getStepName(), "步骤名应该匹配"),
-            () -> assertEquals(0, receivedEvent.getStepIndex(), "步骤索引应该匹配"),
-            () -> assertTrue(receivedEvent.getSuccess(), "步骤应该成功"),
+            () -> assertEquals(0, receivedEvent.getStepOrder(), "步骤序号应该匹配"),
+            () -> assertEquals(Boolean.TRUE, receivedEvent.getStepResult() != null ? receivedEvent.getStepResult().get("success") : null, "步骤应该成功"),
             () -> assertEquals(testCorrelationId, receivedEvent.getCorrelationId(), "关联ID应该匹配"),
             () -> assertEquals(EventType.SAGA_STEP_COMPLETED, receivedEvent.getEventType(), "事件类型应该匹配")
         );
@@ -291,17 +300,17 @@ class SagaRabbitMQIntegrationTest {
         saga.startCompensation("模拟步骤失败");
         
         // 发布补偿相关事件（在实际系统中由SagaExecutionEngine处理）
-        SagaStepCompletedEvent failureEvent = SagaStepCompletedEvent.builder()
-            .sagaId(saga.getSagaId())
-            .stepName("COMPENSABLE_STEP")
-            .stepIndex(0)
-            .success(false)
-            .errorMessage("模拟步骤失败")
-            .correlationId(testCorrelationId)
-            .eventType(EventType.SAGA_STEP_COMPLETED)
-            .build();
+        SagaStepCompletedEvent failureEvent = SagaStepCompletedEvent.createWithResult(
+            saga.getSagaId(),
+            "COMPENSABLE_STEP",
+            0,
+            "test-service",
+            java.util.Map.of("success", false, "errorMessage", "模拟步骤失败"),
+            null,
+            testCorrelationId
+        );
         failureEvent.initializeEvent("test-service");
-        
+
         domainEventPublisher.publish(failureEvent);
         
         // Then
@@ -310,8 +319,8 @@ class SagaRabbitMQIntegrationTest {
         
         SagaStepCompletedEvent receivedEvent = sagaEventListener.getStepCompletedEvents().poll();
         assertNotNull(receivedEvent, "应该接收到步骤完成事件");
-        assertFalse(receivedEvent.getSuccess(), "步骤应该失败");
-        assertEquals("模拟步骤失败", receivedEvent.getErrorMessage(), "错误信息应该匹配");
+        assertEquals(Boolean.FALSE, receivedEvent.getStepResult() != null ? receivedEvent.getStepResult().get("success") : null, "步骤应该失败");
+        assertEquals("模拟步骤失败", receivedEvent.getStepResult() != null ? receivedEvent.getStepResult().get("errorMessage") : null, "错误信息应该匹配");
         
         // 验证Saga状态已更新为补偿中
         assertEquals(SagaTransaction.SagaStatus.COMPENSATING, saga.getStatus(), "Saga应该处于补偿状态");
@@ -326,16 +335,16 @@ class SagaRabbitMQIntegrationTest {
         // When - 并发启动多个Saga
         for (int i = 0; i < concurrentSagas; i++) {
             final int index = i;
-            Thread.ofVirtual().start(() -> {
+            new Thread(() -> {
                 try {
                     CommonResult<String> result = userRegistrationSaga.startUserRegistration(
-                        testUserId + index, testUsername + index, testPhone, testRole, 
+                        testUserId + index, testUsername + index, testPhone, testRole,
                         "password" + index, null, testCorrelationId + index);
                     assertTrue(result.getSuccess(), "Saga启动应该成功");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }).start();
         }
         
         // Then

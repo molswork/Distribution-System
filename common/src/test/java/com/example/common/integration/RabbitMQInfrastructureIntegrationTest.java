@@ -9,6 +9,8 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
@@ -31,7 +33,7 @@ import static org.awaitility.Awaitility.await;
  * 
  * @author Event-Driven Architecture Team
  */
-@SpringBootTest(classes = RabbitMQConfig.class)
+@SpringBootTest(classes = {RabbitMQConfig.class, RabbitAutoConfiguration.class, org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class})
 @TestPropertySource(properties = {
     "spring.rabbitmq.host=localhost",
     "spring.rabbitmq.port=5672", 
@@ -39,7 +41,9 @@ import static org.awaitility.Awaitility.await;
     "spring.rabbitmq.password=guest",
     "spring.rabbitmq.virtual-host=/",
     "spring.rabbitmq.publisher-confirms=true",
-    "spring.rabbitmq.publisher-returns=true"
+    "spring.rabbitmq.publisher-returns=true",
+    "spring.rabbitmq.publisher-confirm-type=correlated",
+    "event-driven.enabled=false"
 })
 @DirtiesContext
 @DisplayName("RabbitMQ基础设施集成测试")
@@ -181,10 +185,11 @@ class RabbitMQInfrastructureIntegrationTest {
     @Test
     @DisplayName("基础设施：重试机制配置应该正确设置")
     void should_ConfigureRetryMechanism_when_RabbitTemplateCreated() {
-        assertNotNull(rabbitTemplate.getRetryTemplate(), "重试模板应该存在");
-        
+        // 通过反射验证重试模板存在（Spring AMQP 2.4.x 无公开 getter）
+
         // 验证重试模板存在（具体重试策略在实际故障时测试）
-        org.springframework.retry.support.RetryTemplate retryTemplate = rabbitTemplate.getRetryTemplate();
+        org.springframework.retry.support.RetryTemplate retryTemplate = (org.springframework.retry.support.RetryTemplate)
+            org.springframework.test.util.ReflectionTestUtils.getField(rabbitTemplate, "retryTemplate");
         assertNotNull(retryTemplate, "重试模板不应该为空");
     }
 
@@ -197,10 +202,10 @@ class RabbitMQInfrastructureIntegrationTest {
         // 并发发送消息
         for (int i = 0; i < messageCount; i++) {
             final int index = i;
-            Thread.ofVirtual().start(() -> {
-                rabbitTemplate.convertAndSend(RabbitMQConfig.SYSTEM_EXCHANGE, 
+            new Thread(() -> {
+                rabbitTemplate.convertAndSend(RabbitMQConfig.SYSTEM_EXCHANGE,
                     "system.performance.test", "Performance test message " + index);
-            });
+            }).start();
         }
         
         // 等待所有消息发送完成（通过时间估算）

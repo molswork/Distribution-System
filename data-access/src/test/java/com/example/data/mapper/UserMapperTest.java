@@ -45,7 +45,7 @@ class UserMapperTest {
         testUser.setPhone("13800138000");
         testUser.setPassword("encrypted_password");
         testUser.setRole("agent");
-        testUser.setStatus(User.UserStatus.ACTIVE);
+        testUser.setStatus(User.UserStatus.ACTIVE.getCode());
         testUser.setCommissionRate(new BigDecimal("0.10"));
         testUser.setParentId(null);
         testUser.setLastLoginAt(LocalDateTime.now());
@@ -163,16 +163,16 @@ class UserMapperTest {
     void testFindByStatus_Success() {
         // Given
         List<User> expectedUsers = Arrays.asList(testUser);
-        when(userMapper.findByStatus(User.UserStatus.ACTIVE)).thenReturn(expectedUsers);
-        
+        when(userMapper.findByStatus(User.UserStatus.ACTIVE.getCode())).thenReturn(expectedUsers);
+
         // When
-        List<User> result = userMapper.findByStatus(User.UserStatus.ACTIVE);
-        
+        List<User> result = userMapper.findByStatus(User.UserStatus.ACTIVE.getCode());
+
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(testUser, result.get(0));
-        verify(userMapper).findByStatus(User.UserStatus.ACTIVE);
+        verify(userMapper).findByStatus(User.UserStatus.ACTIVE.getCode());
     }
 
     @Test
@@ -221,14 +221,14 @@ class UserMapperTest {
     @DisplayName("更新用户状态")
     void testUpdateStatus_Success() {
         // Given
-        when(userMapper.updateStatus(anyLong(), any(User.UserStatus.class), any(LocalDateTime.class))).thenReturn(1);
-        
+        when(userMapper.updateStatus(anyLong(), anyString(), any(LocalDateTime.class))).thenReturn(1);
+
         // When
-        int result = userMapper.updateStatus(1L, User.UserStatus.INACTIVE, LocalDateTime.now());
-        
+        int result = userMapper.updateStatus(1L, User.UserStatus.INACTIVE.getCode(), LocalDateTime.now());
+
         // Then
         assertEquals(1, result);
-        verify(userMapper).updateStatus(anyLong(), any(User.UserStatus.class), any(LocalDateTime.class));
+        verify(userMapper).updateStatus(anyLong(), anyString(), any(LocalDateTime.class));
     }
 
     @Test
