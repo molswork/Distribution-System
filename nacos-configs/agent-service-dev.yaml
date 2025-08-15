@@ -1,0 +1,52 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: agent-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+      config:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+
+# Redis 配置（与其他服务对齐）
+redis:
+  host: localhost
+  port: 6379
+  database: 0
+
+# 业务配置
+agent:
+  cache:
+    enabled: true
+    list-ttl-seconds: 60
+    exists-ttl-seconds: 300
+    performance-ttl-seconds: 300
+    list-version-key: agent:list:ver
+  performance:
+    schedule:
+      enabled: true
+      daily-cron: "0 15 2 * * ?"
+      weekly-cron: "0 30 3 ? * MON"
+  hierarchy:
+    max-levels: 3
+    promotion-grace-days: 7
+  stats:
+    trend-window-days: 30
+
+jwt:
+  secret: mySecretKey123456789012345678901234567890
+  expiration: 86400000
+
+logging:
+  level:
+    com.example.agent: DEBUG
+    org.springframework.web: INFO
+

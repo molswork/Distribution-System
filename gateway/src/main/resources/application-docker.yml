@@ -37,6 +37,15 @@ spring:
           filters:
             - StripPrefix=1
             - AuthFilter
+
+        # Agent Service Route
+        - id: agent-service
+          uri: lb://agent-service
+          predicates:
+            - Path=/api/agents/**
+          filters:
+            - StripPrefix=1
+            - AuthFilter
             
         # Deal Service Route
         - id: deal-service
