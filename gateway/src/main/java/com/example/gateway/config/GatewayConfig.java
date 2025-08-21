@@ -1,6 +1,5 @@
 package com.example.gateway.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +16,6 @@ import java.util.Arrays;
  */
 @Configuration
 public class GatewayConfig {
-    
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
     
     /**
      * CORS配置
@@ -53,9 +47,10 @@ public class GatewayConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-                // 认证服务路由
+                // 认证服务路由（注意：auth-service 在 docker 下 context-path=/auth，需要前缀）
                 .route("auth-service", r -> r.path("/api/auth/**")
-                        .uri("lb://auth-service"))
+                        .filters(f -> f.prefixPath("/auth"))
+                        .uri("http://auth-service:8081"))
                 
                 // 客资服务路由
                 .route("lead-service", r -> r.path("/api/leads/**")
@@ -68,7 +63,11 @@ public class GatewayConfig {
                 // 商品服务路由
                 .route("product-service", r -> r.path("/api/products/**")
                         .uri("lb://product-service"))
-                
+
+                // 用户服务路由
+                .route("user-service", r -> r.path("/api/users/**")
+                        .uri("lb://user-service"))
+
                 // 推广服务路由
                 .route("promotion-service", r -> r.path("/api/promotions/**")
                         .uri("lb://promotion-service"))

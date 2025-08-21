@@ -124,7 +124,7 @@ public class AuthControllerTest {
         user.setId(1L);
         user.setPhone("13800138000");
         user.setRole(com.example.common.enums.UserRole.SALES);
-        user.setNickname("测试用户");
+        user.setUsername("测试用户");
         user.setStatus("active");
         
         // 模拟服务层返回

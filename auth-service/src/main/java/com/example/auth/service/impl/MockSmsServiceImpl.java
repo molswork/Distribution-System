@@ -16,13 +16,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * 短信服务 Mock 实现（开发环境）
  *
- * 仅在 dev profile 且 sms.mock.enabled=true 时启用。
+ * 在 dev 或 docker profile 且 sms.mock.enabled=true 时启用。
  * 不调用真实阿里云短信服务，直接将验证码写入 Redis 并输出到控制台日志。
  */
 @Slf4j
 @Service
 @Primary
-@Profile("dev")
+@Profile({"dev", "docker"})
 @ConditionalOnProperty(prefix = "sms.mock", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class MockSmsServiceImpl implements SmsService {
 
@@ -49,8 +49,8 @@ public class MockSmsServiceImpl implements SmsService {
             throw new BusinessException("验证码发送太频繁，请稍后再试");
         }
 
-        // 3. 生成并缓存验证码
-        String code = generateCode();
+        // 3. Mock环境：使用固定验证码 123456，方便前端测试
+        String code = "123456";
         String codeKey = SMS_CODE_KEY + phone;
         redisTemplate.opsForValue().set(codeKey, code, CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
         redisTemplate.opsForValue().set(limitKey, "1", LIMIT_EXPIRE_SECONDS, TimeUnit.SECONDS);

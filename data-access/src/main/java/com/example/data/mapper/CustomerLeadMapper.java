@@ -1,5 +1,6 @@
 package com.example.data.mapper;
 
+// import com.example.common.annotation.DataTable;
 import com.example.data.entity.CustomerLead;
 import com.example.data.permission.DataPermission;
 import com.example.data.permission.OperationType;
@@ -19,6 +20,7 @@ import java.util.Optional;
  */
 @Repository
 @Mapper
+// @DataTable("customer_leads")
 public interface CustomerLeadMapper {
 
     /**
@@ -29,7 +31,7 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.CREATE, description = "创建客户资源")
     @Insert("INSERT INTO customer_leads (name, phone, wechat_id, status, audit_status, source, source_detail, salesperson_id, notes, last_follow_up_at, created_at, updated_at) " +
-            "VALUES (#{name}, #{phone}, #{wechatId}, #{status.code}, #{auditStatus.code}, #{source}, #{sourceDetail}, #{salespersonId}, #{notes}, #{lastFollowUpAt}, #{createdAt}, #{updatedAt})")
+            "VALUES (#{name}, #{phone}, #{wechatId}, #{status}, #{auditStatus}, #{source}, #{sourceDetail}, #{salespersonId}, #{notes}, #{lastFollowUpAt}, #{createdAt}, #{updatedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(CustomerLead customerLead);
 
@@ -41,12 +43,6 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.READ, description = "根据ID查询客户资源")
     @Select("SELECT * FROM customer_leads WHERE id = #{id}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
     Optional<CustomerLead> findById(@Param("id") Long id);
 
     /**
@@ -57,12 +53,6 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.READ, description = "根据手机号查询客户资源")
     @Select("SELECT * FROM customer_leads WHERE phone = #{phone}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
     Optional<CustomerLead> findByPhone(@Param("phone") String phone);
 
     /**
@@ -75,12 +65,6 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.READ, description = "根据销售ID查询客户资源")
     @Select("SELECT * FROM customer_leads WHERE salesperson_id = #{salespersonId} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
     List<CustomerLead> findBySalespersonId(@Param("salespersonId") Long salespersonId, @Param("offset") int offset, @Param("limit") int limit);
 
     /**
@@ -92,14 +76,8 @@ public interface CustomerLeadMapper {
      * @return 客户资源列表
      */
     @DataPermission(table = "customer_leads", operation = OperationType.READ, description = "按跟进状态查询客户资源")
-    @Select("SELECT * FROM customer_leads WHERE status = #{leadStatus.code} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
-    List<CustomerLead> findByLeadStatus(@Param("leadStatus") CustomerLead.LeadStatus leadStatus,
+    @Select("SELECT * FROM customer_leads WHERE status = #{leadStatus} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    List<CustomerLead> findByLeadStatus(@Param("leadStatus") String leadStatus,
                                        @Param("offset") int offset, @Param("limit") int limit);
 
     /**
@@ -110,14 +88,8 @@ public interface CustomerLeadMapper {
      * @param limit 限制数量
      * @return 客户资源列表
      */
-    @Select("SELECT * FROM customer_leads WHERE audit_status = #{auditStatus.code} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
-    List<CustomerLead> findByAuditStatus(@Param("auditStatus") CustomerLead.AuditStatus auditStatus,
+    @Select("SELECT * FROM customer_leads WHERE audit_status = #{auditStatus} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    List<CustomerLead> findByAuditStatus(@Param("auditStatus") String auditStatus,
                                         @Param("offset") int offset, @Param("limit") int limit);
 
     /**
@@ -130,12 +102,6 @@ public interface CustomerLeadMapper {
      */
     @Select("SELECT * FROM customer_leads WHERE last_follow_up_at IS NOT NULL AND last_follow_up_at <= #{currentDate} " +
             "AND status != 'CONVERTED' ORDER BY last_follow_up_at ASC LIMIT #{offset}, #{limit}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
     List<CustomerLead> findPendingFollowUp(@Param("currentDate") LocalDateTime currentDate,
                                           @Param("offset") int offset, @Param("limit") int limit);
 
@@ -147,12 +113,6 @@ public interface CustomerLeadMapper {
      * @return 客户资源列表
      */
     @Select("SELECT * FROM customer_leads ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    @Results({
-        @Result(property = "status", column = "status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class),
-        @Result(property = "auditStatus", column = "audit_status",
-                typeHandler = org.apache.ibatis.type.EnumTypeHandler.class)
-    })
     List<CustomerLead> findAll(@Param("offset") int offset, @Param("limit") int limit);
 
     /**
@@ -196,7 +156,7 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.UPDATE, description = "更新客户资源信息")
     @Update("UPDATE customer_leads SET name = #{name}, phone = #{phone}, wechat_id = #{wechatId}, " +
-            "status = #{status.code}, audit_status = #{auditStatus.code}, source = #{source}, source_detail = #{sourceDetail}, " +
+            "status = #{status}, audit_status = #{auditStatus}, source = #{source}, source_detail = #{sourceDetail}, " +
             "salesperson_id = #{salespersonId}, notes = #{notes}, last_follow_up_at = #{lastFollowUpAt}, updated_at = #{updatedAt} WHERE id = #{id}")
     int update(CustomerLead customerLead);
 
@@ -210,9 +170,9 @@ public interface CustomerLeadMapper {
      * @return 影响行数
      */
     @DataPermission(table = "customer_leads", operation = OperationType.UPDATE, description = "更新跟进状态")
-    @Update("UPDATE customer_leads SET status = #{leadStatus.code}, last_follow_up_at = #{lastFollowUpAt}, " +
+    @Update("UPDATE customer_leads SET status = #{leadStatus}, last_follow_up_at = #{lastFollowUpAt}, " +
             "updated_at = #{updatedAt} WHERE id = #{id}")
-    int updateFollowUp(@Param("id") Long id, @Param("leadStatus") CustomerLead.LeadStatus leadStatus,
+    int updateFollowUp(@Param("id") Long id, @Param("leadStatus") String leadStatus,
                       @Param("lastFollowUpAt") LocalDateTime lastFollowUpAt, @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
@@ -224,8 +184,8 @@ public interface CustomerLeadMapper {
      * @return 影响行数
      */
     @DataPermission(table = "customer_leads", operation = OperationType.UPDATE, description = "更新审核状态")
-    @Update("UPDATE customer_leads SET audit_status = #{auditStatus.code}, updated_at = #{updatedAt} WHERE id = #{id}")
-    int updateAuditStatus(@Param("id") Long id, @Param("auditStatus") CustomerLead.AuditStatus auditStatus,
+    @Update("UPDATE customer_leads SET audit_status = #{auditStatus}, updated_at = #{updatedAt} WHERE id = #{id}")
+    int updateAuditStatus(@Param("id") Long id, @Param("auditStatus") String auditStatus,
                          @Param("updatedAt") LocalDateTime updatedAt);
 
     /**
@@ -287,7 +247,7 @@ public interface CustomerLeadMapper {
      * @return 影响行数
      */
     @DataPermission(table = "customer_leads", operation = OperationType.UPDATE, description = "批量更新跟进状态")
-    int batchUpdateLeadStatus(@Param("ids") List<Long> ids, @Param("leadStatus") CustomerLead.LeadStatus leadStatus,
+    int batchUpdateLeadStatus(@Param("ids") List<Long> ids, @Param("leadStatus") String leadStatus,
                              @Param("updatedAt") LocalDateTime updatedAt);
     /**
      * 批量更新审核状态
@@ -299,7 +259,7 @@ public interface CustomerLeadMapper {
      */
     @DataPermission(table = "customer_leads", operation = OperationType.UPDATE, description = "批量更新审核状态")
     int batchUpdateAuditStatus(@Param("ids") java.util.List<Long> ids,
-                               @Param("auditStatus") CustomerLead.AuditStatus auditStatus,
+                               @Param("auditStatus") String auditStatus,
                                @Param("updatedAt") java.time.LocalDateTime updatedAt);
 
 }

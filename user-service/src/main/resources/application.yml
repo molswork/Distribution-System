@@ -2,6 +2,8 @@
 spring:
   profiles:
     active: dev
+  application:
+    name: user-service
   main:
     allow-bean-definition-overriding: true
   autoconfigure:

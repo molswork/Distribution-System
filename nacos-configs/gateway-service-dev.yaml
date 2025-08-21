@@ -26,16 +26,14 @@ spring:
           uri: lb://auth-service
           predicates:
             - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
-            
+
+
         # Lead Service Route  
         - id: lead-service
           uri: lb://lead-service
           predicates:
             - Path=/api/leads/**
           filters:
-            - StripPrefix=1
             - AuthFilter
             
         # Deal Service Route
@@ -44,7 +42,6 @@ spring:
           predicates:
             - Path=/api/deals/**
           filters:
-            - StripPrefix=1
             - AuthFilter
             
         # Product Service Route
@@ -53,7 +50,6 @@ spring:
           predicates:
             - Path=/api/products/**
           filters:
-            - StripPrefix=1
             - AuthFilter
             
         # Promotion Service Route
@@ -62,7 +58,6 @@ spring:
           predicates:
             - Path=/api/promotions/**
           filters:
-            - StripPrefix=1
             - AuthFilter
             
         # Level Service Route
@@ -71,7 +66,6 @@ spring:
           predicates:
             - Path=/api/levels/**
           filters:
-            - StripPrefix=1
             - AuthFilter
 
         # Agent Service Route
@@ -80,7 +74,6 @@ spring:
           predicates:
             - Path=/api/agents/**
           filters:
-            - StripPrefix=1
             - AuthFilter
             
       globalcors:
@@ -100,7 +93,7 @@ spring:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Headers Access-Control-Allow-Methods
 
   redis:
-    host: localhost
+    host: redis
     port: 6379
     database: 0
 

@@ -3,6 +3,7 @@ package com.example.auth.service;
 import com.example.auth.dto.LoginRequest;
 import com.example.auth.dto.LoginResponse;
 import com.example.auth.dto.RegisterRequest;
+import com.example.auth.dto.RegisterResponse;
 import com.example.auth.dto.CreateSubordinateRequest;
 import com.example.auth.dto.CreateSubordinateResponse;
 import com.example.auth.entity.User;
@@ -50,10 +51,10 @@ public interface AuthService {
      * </ol>
      * 
      * @param request 注册请求，包含手机号、验证码、密码等信息
-     * @return 登录响应，包含 JWT Token 和用户基本信息
+     * @return 注册响应，包含用户信息、JWT Token 和权限信息
      * @throws BusinessException 当手机号已注册、验证码错误等情况时抛出
      */
-    LoginResponse register(RegisterRequest request);
+    RegisterResponse register(RegisterRequest request);
     
     /**
      * 用户登录

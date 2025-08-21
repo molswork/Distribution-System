@@ -2,6 +2,8 @@ package com.example.auth.integration;
 
 import com.example.auth.AuthServiceApplication;
 import com.example.auth.controller.AuthController;
+import com.example.auth.dto.LoginRequest;
+import com.example.auth.dto.LoginResponse;
 import com.example.auth.entity.User;
 import com.example.auth.mapper.UserMapper;
 import com.example.common.dto.ApiResponse;
@@ -57,11 +59,9 @@ public class AuthIntegrationTest {
         testUser = new User();
         testUser.setPhone("13800138000");
         testUser.setPassword(passwordEncoder.encode("123456"));
-        testUser.setNickname("测试销售");
+        testUser.setUsername("测试销售");
         testUser.setRole(UserRole.SALES);
-        testUser.setInviteCode("TEST001");
         testUser.setStatus("active");
-        testUser.setTotalGmv(BigDecimal.ZERO);
         userMapper.insert(testUser);
     }
     
@@ -71,7 +71,7 @@ public class AuthIntegrationTest {
     @Test
     public void testLoginFlow() throws Exception {
         // 1. 用户登录
-        AuthController.LoginRequest loginRequest = new AuthController.LoginRequest();
+        LoginRequest loginRequest = new LoginRequest();
         loginRequest.setPhone("13800138000");
         loginRequest.setPassword("123456");
         
@@ -89,9 +89,9 @@ public class AuthIntegrationTest {
                 .getContentAsString();
         
         // 解析响应获取token
-        ApiResponse<AuthController.LoginResponse> loginResponse = 
+        ApiResponse<LoginResponse> loginResponse =
                 objectMapper.readValue(response, objectMapper.getTypeFactory()
-                        .constructParametricType(ApiResponse.class, AuthController.LoginResponse.class));
+                        .constructParametricType(ApiResponse.class, LoginResponse.class));
         String token = loginResponse.getData().getToken();
         
         // 2. 使用token获取用户信息
@@ -111,7 +111,7 @@ public class AuthIntegrationTest {
      */
     @Test
     public void testLogin_WrongPassword() throws Exception {
-        AuthController.LoginRequest loginRequest = new AuthController.LoginRequest();
+        LoginRequest loginRequest = new LoginRequest();
         loginRequest.setPhone("13800138000");
         loginRequest.setPassword("wrongpassword");
         
@@ -128,7 +128,7 @@ public class AuthIntegrationTest {
      */
     @Test
     public void testLogin_UserNotExist() throws Exception {
-        AuthController.LoginRequest loginRequest = new AuthController.LoginRequest();
+        LoginRequest loginRequest = new LoginRequest();
         loginRequest.setPhone("13900139000");
         loginRequest.setPassword("123456");
         

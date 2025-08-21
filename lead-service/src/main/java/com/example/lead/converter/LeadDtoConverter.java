@@ -18,6 +18,11 @@ public class LeadDtoConverter {
         CustomerLead e = new CustomerLead();
         e.setName(req.getName());
         e.setPhone(req.getPhone());
+        // 规范化手机号
+        if (req.getPhone() != null) {
+            String phoneNorm = req.getPhone().replace(" ", "").replace("-", "").trim();
+            try { e.getClass().getMethod("setPhoneNormalized", String.class).invoke(e, phoneNorm);} catch (Exception ignore) {}
+        }
         e.setWechatId(req.getWechatId());
         e.setSource(req.getSource());
         e.setSourceDetail(req.getSourceDetail());
@@ -36,10 +41,12 @@ public class LeadDtoConverter {
         dto.setId(e.getId());
         dto.setName(e.getName());
         dto.setPhone(e.getPhone());
-        dto.setStatus(e.getStatus() != null ? e.getStatus().getCode() : null);
-        dto.setAuditStatus(e.getAuditStatus() != null ? e.getAuditStatus().getCode() : null);
+        dto.setStatus(e.getStatus().getCode());
+        dto.setAuditStatus(e.getAuditStatus().getCode());
         dto.setSource(e.getSource());
         dto.setSalespersonId(e.getSalespersonId());
+        // 销售员姓名通过JOIN查询获得，暂时设置为空
+        dto.setSalespersonName(null); // TODO: 修复getSalespersonName()方法
         // 时间格式
         if (e.getLastFollowUpAt() != null) {
             dto.setLastFollowUpAt(DF.format(e.getLastFollowUpAt()));

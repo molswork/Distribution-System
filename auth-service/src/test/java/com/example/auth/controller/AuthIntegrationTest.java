@@ -1,6 +1,7 @@
 package com.example.auth.controller;
 
 import com.example.auth.AuthServiceApplication;
+import com.example.auth.dto.LoginRequest;
 import com.example.auth.entity.User;
 import com.example.auth.mapper.UserMapper;
 import com.example.common.enums.UserRole;
@@ -55,12 +56,11 @@ public class AuthIntegrationTest {
         user.setPassword(SecurityUtils.encodePassword(testPassword));
         user.setRole(UserRole.AGENT);
         user.setStatus("active");
-        user.setNickname("测试用户");
-        user.setInviteCode("TEST123");
+        user.setUsername("测试用户");
         userMapper.insert(user);
 
         // 2. 测试登录
-        AuthController.LoginRequest loginRequest = new AuthController.LoginRequest();
+        LoginRequest loginRequest = new LoginRequest();
         loginRequest.setPhone(testPhone);
         loginRequest.setPassword(testPassword);
 

@@ -36,8 +36,7 @@
                      javaType="com.example.data.entity.CustomerLead$AuditStatus"/>
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" 
                      javaType="com.example.data.entity.Product$ProductStatus"/>
-        <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" 
-                     javaType="com.example.data.entity.Promotion$PromotionAuditStatus"/>
+
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" 
                      javaType="com.example.data.entity.Deal$DealStatus"/>
         <typeHandler handler="org.apache.ibatis.type.EnumTypeHandler" 

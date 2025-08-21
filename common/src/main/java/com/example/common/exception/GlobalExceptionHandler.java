@@ -61,17 +61,39 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<CommonResult<String>> handleValidationException(MethodArgumentNotValidException e) {
-        String errorMessage = e.getBindingResult().getFieldError().getDefaultMessage();
-        logger.warn("参数校验异常: {}", errorMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(CommonResult.badRequest(errorMessage));
+    public ResponseEntity<CommonResult<Map<String, Object>>> handleValidationException(MethodArgumentNotValidException e) {
+        var fieldErrors = e.getBindingResult().getFieldErrors();
+        var errors = new java.util.ArrayList<Map<String, Object>>(fieldErrors.size());
+        for (var fe : fieldErrors) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("field", fe.getField());
+            item.put("rejectedValue", fe.getRejectedValue());
+            item.put("message", fe.getDefaultMessage());
+            errors.add(item);
+        }
+        logger.warn("参数校验异常: {}", errors);
+        Map<String, Object> data = new HashMap<>();
+        data.put("errors", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new CommonResult<>(HttpStatus.BAD_REQUEST.value(), false, "参数校验失败", data));
     }
 
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<CommonResult<String>> handleBindException(BindException e) {
-        String errorMessage = e.getBindingResult().getFieldError().getDefaultMessage();
-        logger.warn("参数绑定异常: {}", errorMessage);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(CommonResult.badRequest(errorMessage));
+    public ResponseEntity<CommonResult<Map<String, Object>>> handleBindException(BindException e) {
+        var fieldErrors = e.getBindingResult().getFieldErrors();
+        var errors = new java.util.ArrayList<Map<String, Object>>(fieldErrors.size());
+        for (var fe : fieldErrors) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("field", fe.getField());
+            item.put("rejectedValue", fe.getRejectedValue());
+            item.put("message", fe.getDefaultMessage());
+            errors.add(item);
+        }
+        logger.warn("参数绑定异常: {}", errors);
+        Map<String, Object> data = new HashMap<>();
+        data.put("errors", errors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new CommonResult<>(HttpStatus.BAD_REQUEST.value(), false, "参数绑定失败", data));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

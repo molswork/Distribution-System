@@ -2,5 +2,15 @@
 spring:
   profiles:
     active: dev
+  cloud:
+    nacos:
+      config:
+        server-addr: nacos:8848
+        namespace: public
+        import-check:
+          enabled: false
+      discovery:
+        server-addr: nacos:8848
+        namespace: public
 
 # 其他配置将通过Nacos获取

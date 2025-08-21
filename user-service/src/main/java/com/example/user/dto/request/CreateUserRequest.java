@@ -33,7 +33,7 @@ public class CreateUserRequest {
      */
     @NotBlank(message = "用户名不能为空")
     @Size(min = 3, max = 64, message = "用户名长度必须在3-64字符之间")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "用户名只能包含字母、数字和下划线")
+    @Pattern(regexp = "^[a-zA-Z0-9_\\u4e00-\\u9fa5]+$", message = "用户名只能包含字母、数字、下划线和中文")
     @Schema(description = "用户名", required = true, example = "zhangsan")
     private String username;
     
@@ -75,8 +75,8 @@ public class CreateUserRequest {
     /**
      * 提成比例（可选）
      */
-    @DecimalMin(value = "0.0", message = "提成比例不能小于0")
-    @DecimalMax(value = "1.0", message = "提成比例不能大于1")
+    @DecimalMin(value = "0.0", inclusive = true, message = "提成比例不能小于0")
+    @DecimalMax(value = "1.0", inclusive = true, message = "提成比例不能大于1")
     @Digits(integer = 1, fraction = 3, message = "提成比例最多3位小数")
     @Schema(description = "提成比例", example = "0.15")
     private Double commissionRate;

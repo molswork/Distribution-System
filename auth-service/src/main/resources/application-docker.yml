@@ -56,6 +56,11 @@ jwt:
   secret: mySecretKey123456789012345678901234567890
   expiration: 86400000 # 24小时
 
+# 短信Mock开关（Docker环境使用Mock）
+sms:
+  mock:
+    enabled: true
+
 # 阿里云SMS配置
 aliyun:
   sms:

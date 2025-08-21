@@ -154,14 +154,15 @@ class ErrorHandlingIntegrationTest {
         
         // 处理异常
         var resp = globalExceptionHandler.handleValidationException(validationException);
-        CommonResult<String> result = resp.getBody();
-        
+        CommonResult<Map<String, Object>> result = resp.getBody();
+
         // 验证结果
         assertNotNull(result);
         assertEquals(400, result.getCode());
-        assertEquals("字段验证失败", result.getMessage());
+        assertEquals("参数校验失败", result.getMessage());
         assertEquals(false, result.getSuccess());
-        assertNull(result.getData()); // 参数校验异常使用向后兼容格式
+        assertNotNull(result.getData()); // 参数校验异常返回错误详情
+        assertTrue(result.getData().containsKey("errors"));
     }
 
     @Test

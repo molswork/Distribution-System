@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  客资审核记录数据访问层 MyBatis 映射文件
+
+  对应接口：com.example.lead.mapper.LeadAuditRecordMapper
+  对应实体：com.example.lead.entity.LeadAuditRecord
+  对应数据表：lead_audit_records
+
+  功能说明：
+  - 提供客资审核记录表的 CRUD 操作 SQL 映射
+  - 支持基于多维度条件的审核记录查询
+  - 关联用户表获取审核员信息
+  - 支持分页查询和统计功能
+
+  @author System
+  @date 2025-08-20
+  @since 1.0.0
+-->
+<mapper namespace="com.example.lead.mapper.LeadAuditRecordMapper">
+
+    <!-- 审核记录基础字段映射 -->
+    <resultMap id="BaseResultMap" type="com.example.lead.entity.LeadAuditRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="lead_id" property="leadId" jdbcType="BIGINT"/>
+        <result column="auditor_id" property="auditorId" jdbcType="BIGINT"/>
+        <result column="status_before" property="statusBefore" jdbcType="VARCHAR"/>
+        <result column="status_after" property="statusAfter" jdbcType="VARCHAR"/>
+        <result column="comment" property="comment" jdbcType="LONGVARCHAR"/>
+        <result column="reject_reason" property="rejectReason" jdbcType="VARCHAR"/>
+        <result column="audited_at" property="auditedAt" jdbcType="TIMESTAMP"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 审核记录DTO字段映射（包含审核员信息） -->
+    <resultMap id="DtoResultMap" type="com.example.lead.dto.LeadAuditRecordDto">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="lead_id" property="leadId" jdbcType="BIGINT"/>
+        <result column="auditor_id" property="auditorId" jdbcType="BIGINT"/>
+        <result column="auditor_name" property="auditorName" jdbcType="VARCHAR"/>
+        <result column="auditor_role" property="auditorRole" jdbcType="VARCHAR"/>
+        <result column="status_before" property="statusBefore" jdbcType="VARCHAR"/>
+        <result column="status_after" property="statusAfter" jdbcType="VARCHAR"/>
+        <result column="comment" property="comment" jdbcType="LONGVARCHAR"/>
+        <result column="reject_reason" property="rejectReason" jdbcType="VARCHAR"/>
+        <result column="audited_at" property="auditedAt" jdbcType="TIMESTAMP"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, lead_id, auditor_id, status_before, status_after, comment, reject_reason, 
+        audited_at, created_at, updated_at
+    </sql>
+
+    <!-- 插入审核记录 -->
+    <insert id="insert" parameterType="com.example.lead.entity.LeadAuditRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO lead_audit_records (
+            lead_id, auditor_id, status_before, status_after, comment, reject_reason, audited_at
+        ) VALUES (
+            #{leadId}, #{auditorId}, #{statusBefore}, #{statusAfter}, #{comment}, #{rejectReason}, #{auditedAt}
+        )
+    </insert>
+
+    <!-- 根据ID查询审核记录 -->
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM lead_audit_records
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据客资ID查询审核记录列表 -->
+    <select id="selectByLeadId" parameterType="java.lang.Long" resultMap="DtoResultMap">
+        SELECT 
+            lar.id,
+            lar.lead_id,
+            lar.auditor_id,
+            u.username as auditor_name,
+            u.role as auditor_role,
+            lar.status_before,
+            lar.status_after,
+            lar.comment,
+            lar.reject_reason,
+            lar.audited_at,
+            lar.created_at
+        FROM lead_audit_records lar
+        LEFT JOIN users u ON lar.auditor_id = u.id
+        WHERE lar.lead_id = #{leadId}
+        ORDER BY lar.audited_at DESC
+    </select>
+
+    <!-- 分页查询审核记录列表（带审核员信息） -->
+    <select id="selectAuditRecords" resultMap="DtoResultMap">
+        SELECT
+            lar.id,
+            lar.lead_id,
+            lar.auditor_id,
+            u.username as auditor_name,
+            u.role as auditor_role,
+            lar.status_before,
+            lar.status_after,
+            lar.comment,
+            lar.reject_reason,
+            lar.audited_at,
+            lar.created_at
+        FROM lead_audit_records lar
+        LEFT JOIN users u ON lar.auditor_id = u.id
+        <where>
+            <if test="leadId != null">
+                AND lar.lead_id = #{leadId}
+            </if>
+            <if test="auditorId != null">
+                AND lar.auditor_id = #{auditorId}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND lar.audited_at >= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND lar.audited_at &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY lar.audited_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计审核记录数量 -->
+    <select id="countAuditRecords" resultType="int">
+        SELECT COUNT(*)
+        FROM lead_audit_records lar
+        <where>
+            <if test="leadId != null">
+                AND lar.lead_id = #{leadId}
+            </if>
+            <if test="auditorId != null">
+                AND lar.auditor_id = #{auditorId}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND lar.audited_at >= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND lar.audited_at &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <!-- 更新审核记录 -->
+    <update id="update" parameterType="com.example.lead.entity.LeadAuditRecord">
+        UPDATE lead_audit_records
+        SET
+            status_before = #{statusBefore},
+            status_after = #{statusAfter},
+            comment = #{comment},
+            reject_reason = #{rejectReason},
+            audited_at = #{auditedAt},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除审核记录 -->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM lead_audit_records WHERE id = #{id}
+    </delete>
+
+</mapper>

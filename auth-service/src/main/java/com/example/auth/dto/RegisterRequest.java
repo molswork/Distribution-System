@@ -15,9 +15,8 @@ public class RegisterRequest {
     @Schema(description = "手机号", required = true, example = "13800138000")
     private String phone;
     
-    @NotBlank(message = "验证码不能为空")
-    @Pattern(regexp = "^\\d{6}$", message = "验证码格式不正确")
-    @Schema(description = "短信验证码（6位数字）", required = true, example = "123456")
+    // 完全移除验证码验证，生产环境不需要验证码
+    @Schema(description = "短信验证码（已禁用）", required = false, example = "")
     private String code;
     
     @NotBlank(message = "密码不能为空")

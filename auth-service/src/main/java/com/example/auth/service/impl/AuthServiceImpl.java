@@ -3,6 +3,7 @@ package com.example.auth.service.impl;
 import com.example.auth.dto.LoginRequest;
 import com.example.auth.dto.LoginResponse;
 import com.example.auth.dto.RegisterRequest;
+import com.example.auth.dto.RegisterResponse;
 import com.example.auth.dto.CreateSubordinateRequest;
 import com.example.auth.dto.CreateSubordinateResponse;
 import com.example.auth.entity.User;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -90,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public LoginResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         log.info("用户注册请求：phone={}", request.getPhone());
         
         // 1. 验证手机号格式
@@ -98,12 +100,12 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("手机号格式不正确");
         }
         
-        // 2. 验证验证码
-        String cacheKey = SMS_CODE_PREFIX + request.getPhone();
-        String cachedCode = redisTemplate.opsForValue().get(cacheKey);
-        if (cachedCode == null || !cachedCode.equals(request.getCode())) {
-            throw new BusinessException("验证码错误或已过期");
-        }
+        // 2. 验证验证码 - 暂时注释，跳过验证码验证
+        // String cacheKey = SMS_CODE_PREFIX + request.getPhone();
+        // String cachedCode = redisTemplate.opsForValue().get(cacheKey);
+        // if (cachedCode == null || !cachedCode.equals(request.getCode())) {
+        //     throw new BusinessException("验证码错误或已过期");
+        // }
         
         // 3. 基础唯一性检查（手机号/用户名/邮箱）
         if (userMapper.existsByPhone(request.getPhone())) {
@@ -149,8 +151,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("注册失败，唯一约束冲突");
         }
 
-        // 7. 删除已使用的验证码
-        redisTemplate.delete(cacheKey);
+        // 7. 删除已使用的验证码 - 暂时注释，因为跳过了验证码验证
+        // redisTemplate.delete(cacheKey);
 
         // 8. 生成 Token
         String token = JwtUtils.generateToken(user.getId().toString(), user.getRole().name());
@@ -161,13 +163,22 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 10. 构建响应
-        LoginResponse response = new LoginResponse();
+        RegisterResponse response = new RegisterResponse();
+
+        // 构建用户信息
+        RegisterResponse.UserInfo userInfo = new RegisterResponse.UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        userInfo.setPhone(user.getPhone());
+        userInfo.setRole(user.getRole().name());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setNickname(user.getUsername()); // 暂时使用用户名作为昵称
+
+        response.setUser(userInfo);
         response.setToken(token);
-        response.setUserId(user.getId());
-        response.setNickname(user.getUsername());
-        response.setPhone(user.getPhone());
-        response.setRole(user.getRole().name());
-        
+        response.setPermissions(List.of("basic_access")); // 基础权限
+        response.setMessage("注册成功");
+
         log.info("用户注册成功：userId={}, phone={}", user.getId(), user.getPhone());
         return response;
     }

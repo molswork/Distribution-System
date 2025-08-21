@@ -38,22 +38,48 @@ public class LeadServiceImpl implements LeadService {
     @Override
     public CommonResult<CustomerLeadDto> createLead(CreateLeadRequest request) {
         try {
-            // 检查重复
-            boolean exists = leadDataFacade.existsByPhone(request.getPhone(), null);
-            if (exists) {
-                return CommonResult.error(ErrorCode.CONFLICT.getCode(), "客资已存在");
-            }
-            
-            // 创建客资
-            CustomerLeadDto dto = leadDataFacade.create(request);
-            // 写入成功后，删除该手机号的查重缓存并递增列表缓存版本号
+            String phoneNorm = request.getPhone() == null ? null : request.getPhone().replace(" ", "").replace("-", "").trim();
+            String lockKey = "lead:create:" + (phoneNorm == null ? "" : phoneNorm);
+            // 幂等键
+            String idemKey = null;
+            try { idemKey = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes() != null ?
+                    org.springframework.web.context.request.RequestContextHolder.getRequestAttributes().getAttribute("Idempotency-Key", 0).toString() : null; } catch (Exception ignore) {}
             if (redis != null) {
-                try { redis.delete("lead:exists:phone:" + request.getPhone()); } catch (Exception ignore) {}
-                try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
+                try {
+                    Boolean locked = redis.opsForValue().setIfAbsent(lockKey, "1", java.time.Duration.ofSeconds(10));
+                    if (Boolean.FALSE.equals(locked)) {
+                        return CommonResult.error(ErrorCode.LEAD_002.getHttpCode(), ErrorCode.LEAD_002.getMessage());
+                    }
+                } catch (Exception ex) {
+                    // Redis 不可用时跳过幂等锁，避免请求直接失败
+                    // 可按需记录日志：log.warn("Redis lock skipped: {}", ex.getMessage());
+                }
             }
-            return CommonResult.success(dto);
+            try {
+                // 检查重复
+                boolean exists = leadDataFacade.existsByPhone(request.getPhone(), null);
+                if (exists) {
+                    return CommonResult.error(ErrorCode.LEAD_002.getHttpCode(), ErrorCode.LEAD_002.getMessage());
+                }
+                // 创建客资
+                CustomerLeadDto dto = leadDataFacade.create(request);
+                if (redis != null) {
+                    try { redis.delete("lead:exists:phone:" + request.getPhone()); } catch (Exception ignore) {}
+                    try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
+                }
+                return CommonResult.success(dto);
+            } finally {
+                if (redis != null) {
+                    try { redis.delete(lockKey); } catch (Exception ignore) {}
+                }
+            }
+        } catch (org.springframework.dao.DuplicateKeyException dke) {
+            return CommonResult.error(ErrorCode.LEAD_002.getHttpCode(), ErrorCode.LEAD_002.getMessage());
         } catch (Exception e) {
-            return CommonResult.error(ErrorCode.INTERNAL_SERVER_ERROR.getCode(), "系统错误: " + e.getMessage());
+            // 添加详细的异常日志
+            System.err.println("创建客资时发生异常: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            return CommonResult.error(ErrorCode.INTERNAL_SERVER_ERROR.getHttpCode(), "系统错误: " + e.getMessage());
         }
     }
     
@@ -142,7 +168,26 @@ public class LeadServiceImpl implements LeadService {
                 if (redis != null) try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
                 return CommonResult.success(null);
             }
-            return CommonResult.error(ErrorCode.LEAD_001.getHttpCode(), "客资不存在");
+            // 未删除：可能是不存在或存在业务关联
+            return CommonResult.error(409, "客资不存在或已有关联记录，无法删除");
+        } catch (Exception e) {
+            return CommonResult.error(ErrorCode.INTERNAL_SERVER_ERROR.getHttpCode(), "系统错误: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public CommonResult<Void> batchDeleteLeads(List<Long> ids) {
+        try {
+            if (ids == null || ids.isEmpty()) {
+                return CommonResult.error(ErrorCode.BAD_REQUEST.getHttpCode(), "客资ID列表不能为空");
+            }
+
+            boolean ok = leadDataFacade.batchDeleteLeads(ids);
+            if (ok) {
+                if (redis != null) try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
+                return CommonResult.success(null);
+            }
+            return CommonResult.error(ErrorCode.LEAD_001.getHttpCode(), "部分客资删除失败");
         } catch (Exception e) {
             return CommonResult.error(ErrorCode.INTERNAL_SERVER_ERROR.getHttpCode(), "系统错误: " + e.getMessage());
         }

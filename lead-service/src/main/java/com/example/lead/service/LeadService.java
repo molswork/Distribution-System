@@ -80,4 +80,9 @@ public interface LeadService {
      * 删除客资
      */
     CommonResult<Void> deleteLead(Long id);
+
+    /**
+     * 批量删除客资
+     */
+    CommonResult<Void> batchDeleteLeads(List<Long> ids);
 }

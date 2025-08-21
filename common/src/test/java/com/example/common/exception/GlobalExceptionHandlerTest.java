@@ -91,13 +91,14 @@ class GlobalExceptionHandlerTest {
         MethodArgumentNotValidException exception = new MethodArgumentNotValidException(
             null, bindingResult);
         
-        org.springframework.http.ResponseEntity<com.example.common.dto.CommonResult<String>> response = globalExceptionHandler.handleValidationException(exception);
-        com.example.common.dto.CommonResult<String> result = response.getBody();
+        org.springframework.http.ResponseEntity<com.example.common.dto.CommonResult<Map<String, Object>>> response = globalExceptionHandler.handleValidationException(exception);
+        com.example.common.dto.CommonResult<Map<String, Object>> result = response.getBody();
 
         assertNotNull(result);
         assertEquals(400, result.getCode());
-        assertEquals("手机号格式不正确", result.getMessage());
-        assertNull(result.getData());
+        assertEquals("参数校验失败", result.getMessage());
+        assertNotNull(result.getData());
+        assertTrue(result.getData().containsKey("errors"));
     }
 
     @Test
@@ -110,13 +111,14 @@ class GlobalExceptionHandlerTest {
         
         BindException exception = new BindException(bindingResult);
         
-        org.springframework.http.ResponseEntity<com.example.common.dto.CommonResult<String>> response = globalExceptionHandler.handleBindException(exception);
-        com.example.common.dto.CommonResult<String> result = response.getBody();
+        org.springframework.http.ResponseEntity<com.example.common.dto.CommonResult<Map<String, Object>>> response = globalExceptionHandler.handleBindException(exception);
+        com.example.common.dto.CommonResult<Map<String, Object>> result = response.getBody();
 
         assertNotNull(result);
         assertEquals(400, result.getCode());
-        assertEquals("邮箱格式不正确", result.getMessage());
-        assertNull(result.getData());
+        assertEquals("参数绑定失败", result.getMessage());
+        assertNotNull(result.getData());
+        assertTrue(result.getData().containsKey("errors"));
     }
 
     @Test

@@ -97,6 +97,12 @@ public class LeadController {
         return leadService.deleteLead(id);
     }
 
+    @PostMapping("/batch-delete")
+    @Operation(summary = "批量删除客资", description = "批量删除多个客资")
+    public CommonResult<Void> batchDeleteLeads(@Valid @RequestBody com.example.lead.dto.BatchDeleteRequest req) {
+        return leadService.batchDeleteLeads(req.getIds());
+    }
+
     @PostMapping("/detect-source")
     @Operation(summary = "来源检测")
     public CommonResult<java.util.Map<String,Object>> detectSource(@RequestBody com.example.lead.dto.SourceDetectionRequest request) {

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 
-@Schema(description = "更新客资请求（email 字段当前不会入库，仅为预留）")
+@Schema(description = "更新客资请求")
 public class UpdateLeadRequest implements Serializable {
     @Schema(description = "姓名", example = "张三-更新")
     private String name;
@@ -16,6 +16,14 @@ public class UpdateLeadRequest implements Serializable {
     private String email;
     @Schema(description = "备注", example = "第二次回访安排周五")
     private String notes;
+    @Schema(description = "客资状态", example = "FOLLOWING", allowableValues = {"PENDING", "FOLLOWING", "CONVERTED", "INVALID"})
+    private String status;
+    @Schema(description = "来源渠道", example = "微信")
+    private String source;
+    @Schema(description = "来源详情", example = "朋友圈广告")
+    private String sourceDetail;
+    @Schema(description = "归属销售ID", example = "123")
+    private Long salespersonId;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -27,5 +35,13 @@ public class UpdateLeadRequest implements Serializable {
     public void setEmail(String email) { this.email = email; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+    public String getSourceDetail() { return sourceDetail; }
+    public void setSourceDetail(String sourceDetail) { this.sourceDetail = sourceDetail; }
+    public Long getSalespersonId() { return salespersonId; }
+    public void setSalespersonId(Long salespersonId) { this.salespersonId = salespersonId; }
 }
 

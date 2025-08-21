@@ -31,8 +31,8 @@ public class UpdateUserRequest {
      * 用户名
      */
     @Size(min = 3, max = 64, message = "用户名长度必须在3-64字符之间")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "用户名只能包含字母、数字和下划线")
-    @Schema(description = "用户名", example = "zhangsan")
+    @Pattern(regexp = "^[a-zA-Z0-9_\\u4e00-\\u9fa5]+$", message = "用户名只能包含字母、数字、下划线和中文")
+    @Schema(description = "用户名", example = "张三")
     private String username;
     
     /**

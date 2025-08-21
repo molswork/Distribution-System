@@ -175,7 +175,7 @@ class UserCreatedEventHandlerTest {
     }
 
     @Test
-    void should_be_transactional() {
+    void should_be_transactional() throws NoSuchMethodException {
         // Given - 检查方法是否有@Transactional注解
         boolean isTransactional = eventHandler.getClass()
                 .getDeclaredMethod("handle", Object.class)

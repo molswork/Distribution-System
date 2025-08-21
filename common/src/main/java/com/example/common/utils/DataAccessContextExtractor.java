@@ -1,5 +1,6 @@
 package com.example.common.utils;
 
+import com.example.common.annotation.DataTable;
 import com.example.common.dto.DataAccessContext;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
@@ -139,14 +140,22 @@ public class DataAccessContextExtractor {
      */
     private String extractTableName(ProceedingJoinPoint joinPoint) {
         try {
-            // 优先从方法声明类型（接口）名中提取
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            String declaringSimple = signature.getDeclaringType().getSimpleName();
-            if (declaringSimple.endsWith("Mapper")) {
+            Class<?> declaringType = signature.getDeclaringType();
+            // 1) 注解优先：如果 Mapper 接口上标注了 @DataTable，则使用显式表名
+            if (declaringType != null) {
+                DataTable anno = declaringType.getAnnotation(DataTable.class);
+                if (anno != null && StringUtils.hasText(anno.value())) {
+                    return anno.value();
+                }
+            }
+            // 2) 回退：根据接口简单类名推断（去掉 Mapper 后缀 + 驼峰转下划线）
+            String declaringSimple = declaringType != null ? declaringType.getSimpleName() : null;
+            if (declaringSimple != null && declaringSimple.endsWith("Mapper")) {
                 String tableName = declaringSimple.substring(0, declaringSimple.length() - 6);
                 return camelToSnakeCase(tableName);
             }
-            // 退化到 target class 名称
+            // 3) 再退：target class 名称
             String className = joinPoint.getTarget().getClass().getSimpleName();
             if (className.endsWith("Mapper")) {
                 String tableName = className.substring(0, className.length() - 6);
@@ -158,7 +167,7 @@ public class DataAccessContextExtractor {
             return "unknown_table";
         }
     }
-    
+
     /**
      * 提取操作类型
      * 

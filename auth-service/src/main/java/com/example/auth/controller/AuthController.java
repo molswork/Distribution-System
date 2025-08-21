@@ -81,15 +81,7 @@ public class AuthController {
     @PostMapping("/register")
     public CommonResult<RegisterResponse> register(
             @Valid @RequestBody RegisterRequest request) {
-        LoginResponse loginResponse = authService.register(request);
-        
-        // 转换为RegisterResponse
-        RegisterResponse response = new RegisterResponse();
-        response.setUserId(loginResponse.getUserId());
-        response.setPhone(loginResponse.getPhone());
-        response.setRole(loginResponse.getRole());
-        response.setMessage("注册成功");
-        
+        RegisterResponse response = authService.register(request);
         return CommonResult.success(response);
     }
     

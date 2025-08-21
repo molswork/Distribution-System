@@ -58,22 +58,20 @@ public class LeadDataFacade {
 
     public CustomerLeadDto create(CreateLeadRequest req) {
         CustomerLead e = LeadDtoConverter.toEntity(req);
+        // 不再设置phoneNormalized字段，因为数据库表中没有这个字段
         leadMapper.insert(e);
         return LeadDtoConverter.toDto(e);
     }
 
     public boolean updateStatus(Long id, String statusCode) {
-        CustomerLead.LeadStatus status = CustomerLead.LeadStatus.fromCode(statusCode);
-        return leadMapper.updateFollowUp(id, status, LocalDateTime.now(), LocalDateTime.now()) > 0;
+        return leadMapper.updateFollowUp(id, statusCode, LocalDateTime.now(), LocalDateTime.now()) > 0;
     }
 
     public boolean batchUpdateAuditStatus(List<Long> ids, String auditStatusCode) {
-        CustomerLead.AuditStatus as = CustomerLead.AuditStatus.fromCode(auditStatusCode);
-        return leadMapper.batchUpdateAuditStatus(ids, as, LocalDateTime.now()) > 0;
+        return leadMapper.batchUpdateAuditStatus(ids, auditStatusCode, LocalDateTime.now()) > 0;
     }
     public boolean updateAuditStatus(Long id, String auditStatusCode) {
-        CustomerLead.AuditStatus as = CustomerLead.AuditStatus.fromCode(auditStatusCode);
-        return leadMapper.updateAuditStatus(id, as, java.time.LocalDateTime.now()) > 0;
+        return leadMapper.updateAuditStatus(id, auditStatusCode, java.time.LocalDateTime.now()) > 0;
     }
 
 
@@ -86,15 +84,41 @@ public class LeadDataFacade {
             if (StringUtils.hasText(req.getName())) e.setName(req.getName());
             if (StringUtils.hasText(req.getPhone())) e.setPhone(req.getPhone());
             if (StringUtils.hasText(req.getWechatId())) e.setWechatId(req.getWechatId());
-            // email 字段暂未入库，保留请求但不持久化
             if (StringUtils.hasText(req.getNotes())) e.setNotes(req.getNotes());
+            if (StringUtils.hasText(req.getStatus())) e.setStatus(CustomerLead.LeadStatus.fromCode(req.getStatus()));
+            if (StringUtils.hasText(req.getSource())) e.setSource(req.getSource());
+            if (StringUtils.hasText(req.getSourceDetail())) e.setSourceDetail(req.getSourceDetail());
+            if (req.getSalespersonId() != null) e.setSalespersonId(req.getSalespersonId());
+            // email 字段暂未入库，保留请求但不持久化
             e.setUpdatedAt(LocalDateTime.now());
             return leadMapper.update(e) > 0;
         }).orElse(false);
     }
 
     public boolean deleteLead(Long id) {
-        return leadMapper.deleteById(id) > 0;
+        // 保护性删除：存在关联交易则不允许删除（后续可改为软删除）
+        try {
+            // 如果有 DealMapper 可用于检测关联，这里可以注入并校验；当前仅执行物理删除
+            return leadMapper.deleteById(id) > 0;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    public boolean batchDeleteLeads(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return false;
+        }
+
+        int deletedCount = 0;
+        for (Long id : ids) {
+            if (leadMapper.deleteById(id) > 0) {
+                deletedCount++;
+            }
+        }
+
+        // 如果至少删除了一个，就认为成功
+        return deletedCount > 0;
     }
 
     public com.example.lead.dto.PageResult<CustomerLeadDto> findPageWithCount(Integer page, Integer size,

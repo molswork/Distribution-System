@@ -3,7 +3,7 @@
 <mapper namespace="com.example.data.mapper.PromotionMapper">
 
     <!-- 基础ResultMap -->
-    <resultMap id="BaseResultMap" type="com.example.data.entity.Promotion">
+    <resultMap id="PromotionBaseResultMap" type="com.example.data.entity.Promotion">
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="agent_id" property="agentId" jdbcType="BIGINT"/>
         <result column="title" property="title" jdbcType="VARCHAR"/>
@@ -25,8 +25,8 @@
     </sql>
 
     <!-- 根据关键词搜索推广任务 -->
-    <select id="searchPromotions" resultMap="BaseResultMap">
-        SELECT 
+    <select id="searchPromotions" resultMap="com.example.data.mapper.PromotionMapper.PromotionBaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
         FROM promotions
         WHERE 1=1
@@ -43,8 +43,8 @@
     </select>
 
     <!-- 根据条件查找推广任务列表 -->
-    <select id="findByConditions" resultMap="BaseResultMap">
-        SELECT 
+    <select id="findByConditions" resultMap="com.example.data.mapper.PromotionMapper.PromotionBaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
         FROM promotions
         WHERE 1=1

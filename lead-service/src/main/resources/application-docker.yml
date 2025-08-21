@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: lead-service
-  profiles:
-    active: dev
   config:
     import:
       - optional:nacos:${spring.application.name}.yaml
@@ -13,21 +11,21 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: nacos:8848
         namespace: public
-        enabled: false  # 本地开发时禁用服务发现
+        enabled: true  # Docker环境启用服务发现
       config:
-        server-addr: localhost:8848
+        server-addr: nacos:8848
         namespace: public
         file-extension: yaml
         group: DEFAULT_GROUP
-        enabled: false  # 本地开发时禁用配置中心
+        enabled: false  # 暂时禁用配置中心
         import-check:
           enabled: false
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/distribution_system?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    url: jdbc:mysql://mysql:3306/distribution_system?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
     username: root
     password: Admin123.
     type: com.alibaba.druid.pool.DruidDataSource
@@ -43,9 +41,37 @@ spring:
       test-on-borrow: false
       test-on-return: false
 
+  redis:
+    host: redis
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: admin
+    password: Admin123.
+    virtual-host: /
+    connection-timeout: 15000
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+        prefetch: 10
+        concurrency: 2
+        max-concurrency: 10
+
 mybatis:
-  # 仅使用 data-access 模块提供的 Mapper XML，lead-service 不再加载本地 XML
-  # 注意：data-access 打包后的 XML 位于 JAR 的 /mapper 路径下，因此需使用 classpath*:mapper/**/*.xml
   mapper-locations: classpath*:mapper/**/*.xml
   type-aliases-package: com.example.data.entity
   configuration:
@@ -64,7 +90,7 @@ springdoc:
 
 logging:
   level:
-    com.example.lead: DEBUG
-    org.springframework.cloud: DEBUG
+    com.example.lead: INFO
+    org.springframework.cloud: INFO
   pattern:
     console: '[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n'

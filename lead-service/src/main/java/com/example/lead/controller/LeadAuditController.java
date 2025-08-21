@@ -3,6 +3,7 @@ package com.example.lead.controller;
 import com.example.common.dto.CommonResult;
 import com.example.lead.dto.BatchAuditRequest;
 import com.example.lead.dto.CustomerLeadDto;
+import com.example.lead.dto.LeadAuditRecordDto;
 import com.example.lead.dto.PageResult;
 import com.example.lead.service.LeadAuditService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -92,6 +93,12 @@ public class LeadAuditController {
     @Operation(summary = "审核范围")
     public CommonResult<Object> scope() {
         return auditService.auditScope();
+    }
+
+    @GetMapping("/records/{leadId}")
+    @Operation(summary = "获取指定客资的审核记录")
+    public CommonResult<java.util.List<LeadAuditRecordDto>> getLeadAuditRecords(@PathVariable Long leadId) {
+        return auditService.getLeadAuditRecords(leadId);
     }
 }
 

@@ -38,8 +38,8 @@ spring:
       test-on-return: false
 
 mybatis:
-  # 仅使用 data-access 模块提供的 Mapper XML
-  mapper-locations: classpath*:com/example/data/mapper/**/*.xml
+  # 仅使用 data-access 模块提供的 Mapper XML（打包在依赖 jar 的 /mapper/ 路径下）
+  mapper-locations: classpath*:mapper/**/*.xml
   type-aliases-package: com.example.data.entity
   configuration:
     map-underscore-to-camel-case: true
