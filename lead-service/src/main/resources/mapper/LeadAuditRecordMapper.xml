@@ -30,8 +30,6 @@
         <result column="comment" property="comment" jdbcType="LONGVARCHAR"/>
         <result column="reject_reason" property="rejectReason" jdbcType="VARCHAR"/>
         <result column="audited_at" property="auditedAt" jdbcType="TIMESTAMP"/>
-        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
-        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!-- 审核记录DTO字段映射（包含审核员信息） -->
@@ -46,13 +44,12 @@
         <result column="comment" property="comment" jdbcType="LONGVARCHAR"/>
         <result column="reject_reason" property="rejectReason" jdbcType="VARCHAR"/>
         <result column="audited_at" property="auditedAt" jdbcType="TIMESTAMP"/>
-        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
-        id, lead_id, auditor_id, status_before, status_after, comment, reject_reason, 
-        audited_at, created_at, updated_at
+        id, lead_id, auditor_id, status_before, status_after, comment, reject_reason,
+        audited_at
     </sql>
 
     <!-- 插入审核记录 -->
@@ -73,7 +70,7 @@
 
     <!-- 根据客资ID查询审核记录列表 -->
     <select id="selectByLeadId" parameterType="java.lang.Long" resultMap="DtoResultMap">
-        SELECT 
+        SELECT
             lar.id,
             lar.lead_id,
             lar.auditor_id,
@@ -83,8 +80,7 @@
             lar.status_after,
             lar.comment,
             lar.reject_reason,
-            lar.audited_at,
-            lar.created_at
+            lar.audited_at
         FROM lead_audit_records lar
         LEFT JOIN users u ON lar.auditor_id = u.id
         WHERE lar.lead_id = #{leadId}
@@ -103,8 +99,7 @@
             lar.status_after,
             lar.comment,
             lar.reject_reason,
-            lar.audited_at,
-            lar.created_at
+            lar.audited_at
         FROM lead_audit_records lar
         LEFT JOIN users u ON lar.auditor_id = u.id
         <where>

@@ -22,6 +22,9 @@ public class LeadAuditServiceImpl implements LeadAuditService {
     private final LeadDataFacade facade;
     private final LeadAuditRecordMapper auditRecordMapper;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.data.redis.core.RedisTemplate<String, Object> redis;
+
     public LeadAuditServiceImpl(LeadDataFacade facade, LeadAuditRecordMapper auditRecordMapper) {
         this.facade = facade;
         this.auditRecordMapper = auditRecordMapper;
@@ -118,6 +121,11 @@ public class LeadAuditServiceImpl implements LeadAuditService {
             // 创建审核记录
             createAuditRecord(leadId, statusBefore, statusAfter, comment, rejectReason);
 
+            // 使客资列表缓存立即失效（递增版本键）
+            if (redis != null) {
+                try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
+            }
+
             return facade.findDetailsById(leadId)
                     .map(d -> CommonResult.success(d.getLeadInfo()))
                     .orElseGet(() -> CommonResult.error(ErrorCode.LEAD_001.getHttpCode(), "客资不存在"));
@@ -144,7 +152,13 @@ public class LeadAuditServiceImpl implements LeadAuditService {
             }
 
             boolean ok = facade.batchUpdateAuditStatus(request.getIds(), request.getAuditStatus());
-            if (ok) return CommonResult.success(null);
+            if (ok) {
+                // 批量审核成功，失效列表缓存
+                if (redis != null) {
+                    try { redis.opsForValue().increment("lead:list:ver"); } catch (Exception ignore) {}
+                }
+                return CommonResult.success(null);
+            }
             return CommonResult.error(ErrorCode.OPERATION_FAILED.getHttpCode(), "批量审核失败");
         } catch (Exception e) {
             return CommonResult.error(ErrorCode.INTERNAL_SERVER_ERROR.getHttpCode(), "系统错误: " + e.getMessage());

@@ -129,7 +129,8 @@ public class LeadDataFacade {
         List<CustomerLeadDto> data;
         long total;
         boolean fromCache = false;
-        if (redis != null) {
+        boolean isPending = "PENDING_AUDIT".equalsIgnoreCase(auditStatus);
+        if (!isPending && redis != null) {
             Object v = redis.opsForValue().get(verKey);
             if (v != null) ver = v.toString();
             String raw = String.format("p=%s,s=%s,sp=%s,st=%s,as=%s,kw=%s,src=%s,sd=%s,ed=%s,sb=%s,so=%s",
@@ -146,7 +147,7 @@ public class LeadDataFacade {
         data = findPage(page, size, salespersonId, status, auditStatus, keyword, source, startDate, endDate, sortBy, sortOrder);
         total = countByConditions(salespersonId, status, auditStatus, keyword, source, startDate, endDate);
         com.example.lead.dto.PageResult<CustomerLeadDto> pr = new com.example.lead.dto.PageResult<>(data, total, page == null ? 1 : page, size == null ? 10 : size);
-        if (redis != null) {
+        if (!isPending && redis != null) {
             String raw = String.format("p=%s,s=%s,sp=%s,st=%s,as=%s,kw=%s,src=%s,sd=%s,ed=%s,sb=%s,so=%s",
                     page,size,salespersonId,status,auditStatus,keyword,source,startDate,endDate,sortBy,sortOrder);
             String k = "lead:list:v" + ver + ":" + org.springframework.util.DigestUtils.md5DigestAsHex(raw.getBytes());
